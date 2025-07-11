@@ -15,13 +15,9 @@ import { ResponsiveIndicator } from "@/components/debug/responsive-indicator"
 import { EnhancedNavigation } from "@/components/navigation/enhanced-navigation"
 import { GlobalPlayer } from "@/components/simple-mode/global-player"
 
-// Dynamically import providers that use client-side libraries like 'howler'.
-const SoundProvider = dynamic(() => import("@/contexts/sound-context").then((mod) => mod.SoundProvider), { ssr: false })
-
-const AudioPlayerProvider = dynamic(
-  () => import("@/contexts/audio-player-context").then((mod) => mod.AudioPlayerProvider),
-  { ssr: false },
-)
+// Correctly load components with default exports using next/dynamic
+const SoundProvider = dynamic(() => import("@/contexts/sound-context"), { ssr: false })
+const AudioPlayerProvider = dynamic(() => import("@/contexts/audio-player-context"), { ssr: false })
 
 /**
  * This internal component contains the actual layout logic.
@@ -29,7 +25,7 @@ const AudioPlayerProvider = dynamic(
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
   const pathname = usePathname()
-  const isLoginPage = pathname === "/login"
+  const isAuthPage = pathname === "/login" || pathname === "/brand/ritual-onboarding"
 
   if (isLoading) {
     return (
@@ -41,7 +37,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {!isLoginPage && isAuthenticated && <EnhancedNavigation />}
+      {!isAuthPage && isAuthenticated && <EnhancedNavigation />}
       <main className="flex-grow">{children}</main>
       {isAuthenticated && <GlobalPlayer />}
       <Toaster />
