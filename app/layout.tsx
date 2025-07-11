@@ -1,64 +1,25 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Space_Grotesk, Orbitron, EB_Garamond, Inter, Syne } from "next/font/google"
-import { cn } from "@/lib/utils"
-import ClientLayout from "./client"
+import { Inter } from "next/font/google"
 import "./globals.css"
+import ClientLayout from "./client"
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-space-grotesk",
-  display: "swap",
-})
-
-const orbitron = Orbitron({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-orbitron",
-  display: "swap",
-})
-
-const ebGaramond = EB_Garamond({
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  variable: "--font-eb-garamond",
-  display: "swap",
-})
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
-
-const syne = Syne({
-  subsets: ["latin"],
-  weight: ["400", "700", "800"],
-  variable: "--font-syne",
-  display: "swap",
-})
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Howlin Mold - Spore Network",
-  description: "A spore-node ecosystem for music discovery and sonic attunement. Connect, discover, create.",
+  title: "Howlin' Mold",
+  description: "A ritual-grade, globally conscious vinyl discovery system.",
     generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
-    <html
-      lang="en"
-      className={cn(
-        "dark",
-        spaceGrotesk.variable,
-        orbitron.variable,
-        ebGaramond.variable,
-        inter.variable,
-        syne.variable,
-      )}
-      suppressHydrationWarning
-    >
-      <body className={`font-sans bg-background text-foreground`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

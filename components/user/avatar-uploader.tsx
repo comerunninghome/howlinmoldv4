@@ -1,87 +1,70 @@
 "use client"
 
+import { useFormState, useFormStatus } from "react-dom"
 import type React from "react"
-
-import { useState } from "react"
-import { createSupabaseClient } from "@/lib/supabase/client"
-import { useAuth } from "@/lib/auth-context"
-import { useUserProfile } from "@/hooks/use-user-profile"
+import { useEffect, useRef } from "react"
+import { uploadAvatar } from "@/app/profile/actions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2 } from "lucide-react"
 import { UserAvatar } from "./user-avatar"
 
-export function AvatarUploader() {
-  const supabase = createSupabaseClient()
-  const { user } = useAuth()
-  const { data, updateProfile } = useUserProfile()
+interface AvatarUploaderProps {
+  currentAvatarUrl: string | null
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <Button asChild variant="outline" disabled={pending}>
+      <label htmlFor="avatar-upload">
+        {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        {pending ? "Uploading..." : "Change Avatar"}
+      </label>
+    </Button>
+  )
+}
+
+export function AvatarUploader({ currentAvatarUrl }: AvatarUploaderProps) {
+  const initialState = { message: "", success: false }
+  const [state, formAction] = useFormState(uploadAvatar, initialState)
   const { toast } = useToast()
-  const [uploading, setUploading] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    if (!user) {
+  useEffect(() => {
+    if (state.message) {
       toast({
-        title: "Authentication Error",
-        description: "You must be logged in to upload an avatar.",
-        variant: "destructive",
+        title: state.success ? "Success" : "Error",
+        description: state.message,
+        variant: state.success ? "default" : "destructive",
       })
-      return
     }
+  }, [state, toast])
 
-    try {
-      setUploading(true)
-      const file = event.target.files?.[0]
-      if (!file) {
-        throw new Error("You must select an image to upload.")
-      }
-
-      const fileExt = file.name.split(".").pop()
-      const filePath = `${user.id}/${Date.now()}.${fileExt}`
-
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file)
-
-      if (uploadError) {
-        throw uploadError
-      }
-
-      const success = await updateProfile({ avatar_url: filePath })
-      if (success) {
-        toast({ title: "Avatar Updated", description: "Your new avatar has been saved." })
-      } else {
-        throw new Error("Failed to update profile with new avatar.")
-      }
-    } catch (error) {
-      toast({
-        title: "Upload Failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred.",
-        variant: "destructive",
-      })
-    } finally {
-      setUploading(false)
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      formRef.current?.requestSubmit()
     }
   }
 
   return (
     <div className="flex items-center gap-4">
-      <UserAvatar path={data?.profile?.avatar_url ?? null} className="h-20 w-20" />
-      <div className="flex flex-col gap-2">
-        <Button asChild variant="outline" disabled={uploading}>
-          <label htmlFor="avatar-upload">
-            {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {uploading ? "Uploading..." : "Change Avatar"}
-          </label>
-        </Button>
+      <UserAvatar path={currentAvatarUrl} className="h-20 w-20" />
+      <form ref={formRef} action={formAction} className="flex flex-col gap-2">
+        <SubmitButton />
         <Input
           id="avatar-upload"
+          name="avatar"
+          ref={fileInputRef}
           type="file"
           accept="image/png, image/jpeg"
-          onChange={handleUpload}
-          disabled={uploading}
+          onChange={handleFileChange}
           className="hidden"
         />
-        <p className="text-xs text-muted-foreground">PNG or JPG, up to 2MB.</p>
-      </div>
+        <p className="text-xs text-muted-foreground">PNG or JPG, up to 4.5MB.</p>
+      </form>
     </div>
   )
 }

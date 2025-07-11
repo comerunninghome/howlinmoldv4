@@ -13,13 +13,12 @@ export function GlobalPlayer() {
   const {
     currentTrack,
     isPlaying,
-    play,
-    pause,
+    togglePlayPause,
     next,
     previous,
-    seekTo,
+    seek,
     duration,
-    currentTime,
+    progress,
     volume,
     setVolume,
     isMuted,
@@ -33,6 +32,7 @@ export function GlobalPlayer() {
   const { isLiked, toggleLike } = useUserProfile()
 
   const formatTime = (timeInSeconds: number) => {
+    if (isNaN(timeInSeconds) || timeInSeconds < 0) return "0:00"
     const minutes = Math.floor(timeInSeconds / 60)
     const seconds = Math.floor(timeInSeconds % 60)
     return `${minutes}:${seconds.toString().padStart(2, "0")}`
@@ -54,7 +54,7 @@ export function GlobalPlayer() {
         <div className="flex items-center gap-4" style={{ minWidth: "200px" }}>
           <div className="relative h-12 w-12 overflow-hidden rounded-md">
             <Image
-              src={currentTrack.imageUrl || "/placeholder.svg"}
+              src={currentTrack.album_art_url || "/placeholder.svg"}
               alt={currentTrack.title}
               fill
               className="object-cover"
@@ -82,13 +82,8 @@ export function GlobalPlayer() {
             <Button variant="ghost" size="icon" className="rounded-full" onClick={previous}>
               <SkipBack className="h-6 w-6" />
             </Button>
-            <Button
-              variant="default"
-              size="icon"
-              className="h-12 w-12 rounded-full"
-              onClick={() => (isPlaying ? pause() : play(currentTrack))}
-            >
-              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+            <Button variant="default" size="icon" className="h-12 w-12 rounded-full" onClick={togglePlayPause}>
+              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full" onClick={next}>
               <SkipForward className="h-6 w-6" />
@@ -98,12 +93,12 @@ export function GlobalPlayer() {
             </Button>
           </div>
           <div className="flex w-full items-center gap-2">
-            <span className="text-xs text-muted-foreground">{formatTime(currentTime)}</span>
+            <span className="text-xs text-muted-foreground">{formatTime(progress)}</span>
             <Slider
-              value={[currentTime]}
+              value={[progress]}
               max={duration}
               step={1}
-              onValueChange={(value) => seekTo(value[0])}
+              onValueChange={(value) => seek(value[0])}
               className="w-full"
             />
             <span className="text-xs text-muted-foreground">{formatTime(duration)}</span>

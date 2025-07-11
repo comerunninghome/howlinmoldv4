@@ -1,136 +1,129 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, type FormEvent } from "react"
-import { useUserProfile } from "@/hooks/use-user-profile"
-import type { UserProfile } from "@/lib/database-types"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import type { z } from "zod"
 import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { useUserProfile } from "@/hooks/use-user-profile"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import { DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog"
+import { profileSchema } from "@/lib/types"
 import { AvatarUploader } from "./avatar-uploader"
-import { Separator } from "@/components/ui/separator"
+
+const formSchema = profileSchema.pick({
+  username: true,
+  full_name: true,
+  favorite_genres: true,
+})
 
 interface EditProfileFormProps {
-  onSuccess: () => void
+  onOpenChange: (open: boolean) => void
 }
 
-export function EditProfileForm({ onSuccess }: EditProfileFormProps) {
+export function EditProfileForm({ onOpenChange }: EditProfileFormProps) {
   const { data, updateProfile } = useUserProfile()
   const { toast } = useToast()
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [formData, setFormData] = useState({
-    full_name: "",
-    username: "",
-    website: "",
-    favorite_genres: "",
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: data?.profile?.username ?? "",
+      full_name: data?.profile?.full_name ?? "",
+      favorite_genres: data?.profile?.favorite_genres ?? [],
+    },
   })
 
-  useEffect(() => {
-    if (data?.profile) {
-      setFormData({
-        full_name: data.profile.full_name || "",
-        username: data.profile.username || "",
-        website: data.profile.website || "",
-        favorite_genres: data.profile.favorite_genres?.join(", ") || "",
-      })
-    }
-  }, [data])
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-
-    const updates: Partial<UserProfile> = {
-      full_name: formData.full_name,
-      username: formData.username,
-      website: formData.website,
-      favorite_genres: formData.favorite_genres
-        .split(",")
-        .map((g) => g.trim())
-        .filter(Boolean),
-    }
-
-    const success = await updateProfile(updates)
-
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const success = await updateProfile(values)
     if (success) {
       toast({
         title: "Profile Updated",
-        description: "Your profile has been successfully updated.",
+        description: "Your changes have been saved successfully.",
       })
-      onSuccess()
+      onOpenChange(false)
     } else {
       toast({
         title: "Update Failed",
-        description: "There was an error updating your profile. Please try again.",
+        description: "Could not save your changes. Please try again.",
         variant: "destructive",
       })
     }
-    setIsSubmitting(false)
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   return (
-    <div className="space-y-6">
-      <AvatarUploader />
-      <Separator />
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="full_name">Full Name</Label>
-          <Input
-            id="full_name"
-            name="full_name"
-            value={formData.full_name}
-            onChange={handleChange}
-            placeholder="Your full name"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
-          <Input
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            placeholder="A unique username"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="website">Website</Label>
-          <Input
-            id="website"
-            name="website"
-            type="url"
-            value={formData.website}
-            onChange={handleChange}
-            placeholder="https://your-website.com"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="favorite_genres">Favorite Genres</Label>
-          <Textarea
-            id="favorite_genres"
-            name="favorite_genres"
-            value={formData.favorite_genres}
-            onChange={handleChange}
-            placeholder="Ambient, Techno, Ritual Bass..."
-            rows={3}
-          />
-          <p className="text-xs text-muted-foreground">Enter genres separated by commas.</p>
-        </div>
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Changes
-        </Button>
-      </form>
-    </div>
+    <>
+      <DialogHeader>
+        <DialogTitle>Edit Profile</DialogTitle>
+        <DialogDescription>Make changes to your profile here. Click save when you're done.</DialogDescription>
+      </DialogHeader>
+      <div className="space-y-6 py-4">
+        <AvatarUploader currentAvatarUrl={data?.profile?.avatar_url ?? null} />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your unique username" {...field} />
+                  </FormControl>
+                  <FormDescription>This is your public display name.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="full_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your full name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="favorite_genres"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Favorite Genres</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Cosmic Ambient, Teutonic Sleaze"
+                      {...field}
+                      onChange={(e) => {
+                        const genres = e.target.value.split(",").map((g) => g.trim())
+                        field.onChange(genres)
+                      }}
+                      value={Array.isArray(field.value) ? field.value.join(", ") : ""}
+                    />
+                  </FormControl>
+                  <FormDescription>A comma-separated list of your resonant frequencies.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </div>
+    </>
   )
 }

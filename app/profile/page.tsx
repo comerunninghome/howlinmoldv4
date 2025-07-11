@@ -167,7 +167,7 @@ const CurrentTierIcon = ({ className }: { className?: string }) => {
 }
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { data: profileData, isLoading: profileLoading, error, refetch } = useUserProfile()
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -200,7 +200,8 @@ export default function ProfilePage() {
 
   const currentTierIndex = useMemo(() => {
     if (!safeProfileData?.profile) return 0
-    return TIERS_DATA.findIndex((tier) => tier.id === safeProfileData.profile.current_tier_id)
+    const tierId = safeProfileData.profile.current_tier_id || "initiate"
+    return TIERS_DATA.findIndex((tier) => tier.id === tierId)
   }, [safeProfileData?.profile])
 
   const currentTier = TIERS_DATA[currentTierIndex >= 0 ? currentTierIndex : 0]
@@ -343,7 +344,7 @@ export default function ProfilePage() {
           <Card className={cn("border-2", currentTier.borderColor, currentTier.bgColor, "shadow-lg")}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className={cn("text-sm font-medium", currentTier.color)}>Current Attunement</CardTitle>
-              <CurrentTierIcon className={cn("w-6 h-6", currentTier.color)} />
+              <currentTier.icon className={cn("w-6 h-6", currentTier.color)} />
             </CardHeader>
             <CardContent>
               <MythicText type="h3" className={cn("text-2xl font-bold", currentTier.color)}>

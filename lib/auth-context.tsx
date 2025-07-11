@@ -1,33 +1,29 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import type { User } from "@supabase/supabase-js"
-import { createSupabaseClient } from "@/lib/supabase/client"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { supabase } from "@/lib/supabase/client" // Correctly import the singleton client
+import type { AuthSession, User } from "@supabase/supabase-js"
 
 type AuthContextType = {
   user: User | null
+  session: AuthSession | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<boolean>
-  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-  const pathname = usePathname()
-  const supabase = createSupabaseClient()
 
   useEffect(() => {
     const getSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession()
+      setSession(session)
       setUser(session?.user ?? null)
       setIsLoading(false)
     }
@@ -37,64 +33,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const currentUser = session?.user ?? null
-      setUser(currentUser)
-      setIsLoading(false)
-
-      if (currentUser && pathname === "/login") {
-        router.push("/")
-      } else if (!currentUser && pathname !== "/login") {
-        router.push("/login")
-      }
+      setSession(session)
+      setUser(session?.user ?? null)
     })
 
     return () => {
-      subscription?.unsubscribe()
+      subscription.unsubscribe()
     }
-  }, [supabase.auth, pathname, router])
-
-  const login = useCallback(
-    async (email: string, password: string): Promise<boolean> => {
-      setIsLoading(true)
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      setIsLoading(false)
-
-      if (error) {
-        console.error("Login error:", error.message)
-        return false
-      }
-      return true
-    },
-    [supabase.auth],
-  )
-
-  const logout = useCallback(async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    router.push("/login")
-  }, [router, supabase.auth])
-
-  useEffect(() => {
-    if (!isLoading && !user && pathname !== "/login") {
-      router.push("/login")
-    }
-  }, [user, isLoading, pathname, router])
+  }, [])
 
   const value = {
     user,
+    session,
     isAuthenticated: !!user,
     isLoading,
-    login,
-    logout,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuth() {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext)
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider")

@@ -1,17 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   UserIcon,
   LogOut,
@@ -33,9 +25,21 @@ import {
   X,
   ChevronDown,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+
+import { useAuth } from "@/lib/auth-context"
+import { useUserProfile } from "@/hooks/use-user-profile"
 import { useSound } from "@/contexts/sound-context"
-import Image from "next/image"
+import { cn } from "@/lib/utils"
+
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { UserAvatar } from "@/components/user/user-avatar"
 
 const sporeNodes = [
   {
@@ -155,12 +159,11 @@ export const EnhancedNavigation = () => {
   const pathname = usePathname()
   const router = useRouter()
   const { user, logout, isAuthenticated } = useAuth()
+  const { profile } = useUserProfile()
   const [isExpanded, setIsExpanded] = useState(false)
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const { playSound } = useSound()
   const [scrolled, setScrolled] = useState(false)
 
-  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
@@ -171,15 +174,8 @@ export const EnhancedNavigation = () => {
 
   const handleNavClick = (href: string, label: string) => {
     playSound("click")
-    console.log(`Navigating to: ${href} (${label})`)
-    try {
-      router.push(href)
-      setIsExpanded(false)
-      setActiveCategory(null)
-    } catch (error) {
-      console.error(`Navigation failed for ${href}:`, error)
-      playSound("error")
-    }
+    router.push(href)
+    setIsExpanded(false)
   }
 
   const handleLogout = () => {
@@ -190,6 +186,8 @@ export const EnhancedNavigation = () => {
   if (!isAuthenticated) {
     return null
   }
+
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "User"
 
   return (
     <>
@@ -203,7 +201,6 @@ export const EnhancedNavigation = () => {
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
             <Button asChild variant="ghost" className="flex items-center space-x-3 hover:bg-transparent px-0 group">
               <Link href="/">
                 <div className="relative">
@@ -228,7 +225,6 @@ export const EnhancedNavigation = () => {
               </Link>
             </Button>
 
-            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-1">
               {sporeNodes.map((category) => (
                 <DropdownMenu key={category.category}>
@@ -236,13 +232,7 @@ export const EnhancedNavigation = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={cn(
-                        "text-foreground/70 hover:text-primary hover:bg-primary/10 transition-all duration-300 relative group",
-                        "before:absolute before:bottom-0 before:left-0 before:w-0 before:h-0.5 before:bg-primary before:transition-all before:duration-300",
-                        "hover:before:w-full",
-                      )}
-                      onMouseEnter={() => setActiveCategory(category.category)}
-                      onMouseLeave={() => setActiveCategory(null)}
+                      className="text-foreground/70 hover:text-primary hover:bg-primary/10 transition-all duration-300 relative group before:absolute before:bottom-0 before:left-0 before:w-0 before:h-0.5 before:bg-primary before:transition-all before:duration-300 hover:before:w-full"
                     >
                       {category.category}
                       <ChevronDown className="w-3 h-3 ml-1 transition-transform duration-200 group-hover:rotate-180" />
@@ -274,9 +264,8 @@ export const EnhancedNavigation = () => {
                               <div className="flex items-start space-x-3 relative z-10">
                                 <div
                                   className={cn(
-                                    "p-2 rounded-lg bg-gradient-to-br flex-shrink-0",
+                                    "p-2 rounded-lg bg-gradient-to-br flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-lg",
                                     item.color,
-                                    "group-hover:scale-110 transition-transform duration-300 shadow-lg",
                                   )}
                                 >
                                   <Icon className="w-4 h-4 text-white" />
@@ -290,7 +279,6 @@ export const EnhancedNavigation = () => {
                                   </div>
                                 </div>
                               </div>
-                              {/* Hover effect background */}
                               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             </div>
                           </DropdownMenuItem>
@@ -302,74 +290,75 @@ export const EnhancedNavigation = () => {
               ))}
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="text-foreground/70 hover:text-primary relative group"
-              >
-                <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-                  {isExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </div>
-              </Button>
-            </div>
-
-            {/* User Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2">
+              <div className="lg:hidden">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "border-primary/30 bg-black/20 backdrop-blur-sm text-foreground/80 transition-all duration-300 relative group overflow-hidden",
-                    "hover:bg-primary/10 hover:text-primary hover:border-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary),0.2)]",
-                  )}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-foreground/70 hover:text-primary"
                 >
-                  <UserIcon className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline font-medium">{user?.name}</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {isExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="bg-black/95 backdrop-blur-xl border-primary/30 shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
-              >
-                <DropdownMenuItem className="focus:bg-primary/20 cursor-default">
-                  <UserIcon className="w-4 h-4 mr-2" />
-                  <div className="flex flex-col">
-                    <span className="font-medium">{user?.name}</span>
-                    <span className="text-xs text-muted-foreground">{user?.email}</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-primary/20" />
-                <DropdownMenuItem asChild className="focus:bg-primary/20 cursor-pointer">
-                  <Link href="/subscription">
-                    <Crown className="w-4 h-4 mr-2" />
-                    Subscription
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="focus:bg-primary/20 cursor-pointer">
-                  <Link href="/settings">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-primary/20" />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="text-red-400 hover:!text-red-300 focus:bg-red-500/10 cursor-pointer"
+              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-primary/30 bg-black/20 backdrop-blur-sm text-foreground/80 transition-all duration-300 relative group overflow-hidden hover:bg-primary/10 hover:text-primary hover:border-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary),0.2)] px-2"
+                  >
+                    <UserAvatar name={displayName} avatarUrl={profile?.avatar_url} />
+                    <span className="hidden sm:inline font-medium ml-2">{displayName}</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="bg-black/95 backdrop-blur-xl border-primary/30 shadow-[0_20px_40px_rgba(0,0,0,0.5)] w-56"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem className="focus:bg-primary/20 cursor-default">
+                    <div className="flex items-center">
+                      <UserAvatar name={displayName} avatarUrl={profile?.avatar_url} />
+                      <div className="flex flex-col ml-2">
+                        <span className="font-medium">{displayName}</span>
+                        <span className="text-xs text-muted-foreground">{user?.email}</span>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-primary/20" />
+                  <DropdownMenuItem asChild className="focus:bg-primary/20 cursor-pointer">
+                    <Link href="/profile">
+                      <UserIcon className="w-4 h-4 mr-2" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="focus:bg-primary/20 cursor-pointer">
+                    <Link href="/subscription">
+                      <Crown className="w-4 h-4 mr-2" />
+                      Subscription
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="focus:bg-primary/20 cursor-pointer">
+                    <Link href="/settings">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-primary/20" />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-400 hover:!text-red-300 focus:bg-red-500/10 cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
-        {/* Mobile Expanded Menu */}
         {isExpanded && (
           <div className="lg:hidden border-t border-primary/20 bg-black/95 backdrop-blur-xl">
             <div className="container mx-auto px-4 py-4">
@@ -420,8 +409,6 @@ export const EnhancedNavigation = () => {
           </div>
         )}
       </nav>
-
-      {/* Spacer to prevent content from hiding behind fixed nav */}
       <div className="h-16" />
     </>
   )

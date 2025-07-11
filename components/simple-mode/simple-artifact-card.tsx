@@ -5,26 +5,28 @@ import Image from "next/image"
 import { Play, Pause, Heart } from "lucide-react"
 import { useAudioPlayer } from "@/contexts/audio-player-context"
 import { useUserProfile } from "@/contexts/user-profile-context"
-import type { Artifact } from "@/lib/artifacts"
+import type { Artifact } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 interface SimpleArtifactCardProps {
   artifact: Artifact
+  allArtifacts: Artifact[]
 }
 
-export function SimpleArtifactCard({ artifact }: SimpleArtifactCardProps) {
+export function SimpleArtifactCard({ artifact, allArtifacts }: SimpleArtifactCardProps) {
   const { play, pause, currentTrack, isPlaying } = useAudioPlayer()
   const { isLiked, toggleLike } = useUserProfile()
 
   const isActive = currentTrack?.id === artifact.id
   const isCurrentlyPlaying = isActive && isPlaying
 
-  const handlePlayPause = () => {
+  const handlePlayPause = (e: React.MouseEvent) => {
+    e.stopPropagation()
     if (isCurrentlyPlaying) {
       pause()
     } else {
-      play(artifact)
+      play(artifact, allArtifacts)
     }
   }
 
@@ -36,12 +38,13 @@ export function SimpleArtifactCard({ artifact }: SimpleArtifactCardProps) {
   return (
     <div
       className={cn(
-        "group relative flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm transition-all hover:bg-muted/50",
+        "group relative flex cursor-pointer items-center gap-4 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm transition-all hover:bg-muted/50",
         isActive && "border-primary bg-muted/80",
       )}
+      onClick={handlePlayPause}
     >
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md">
-        <Image src={artifact.imageUrl || "/placeholder.svg"} alt={artifact.title} fill className="object-cover" />
+        <Image src={artifact.album_art_url || "/placeholder.svg"} alt={artifact.title} fill className="object-cover" />
       </div>
       <div className="flex-grow">
         <h3 className="font-semibold tracking-tight">{artifact.title}</h3>
