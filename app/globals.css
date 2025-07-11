@@ -1,0 +1,290 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Default Theme (Dark - from original globals.css) */
+    --background: hsl(222.2, 84%, 4.9%);
+    --foreground: hsl(210, 40%, 98%);
+    --background-start: hsl(222.2, 70%, 7%);
+
+    --card: hsl(222.2, 80%, 7%);
+    --card-foreground: hsl(210, 40%, 95%);
+    --card-glow: hsl(210, 50%, 60%);
+
+    --popover: hsl(222.2, 84%, 4.9%);
+    --popover-foreground: hsl(210, 40%, 98%);
+
+    --primary: hsl(210, 70%, 75%);
+    --primary-foreground: hsl(222.2, 84%, 4.9%); /* Text on primary buttons */
+
+    --secondary: hsl(217.2, 32.6%, 17.5%);
+    --secondary-foreground: hsl(210, 40%, 90%);
+
+    --muted: hsl(217.2, 25%, 25%);
+    --muted-foreground: hsl(215, 20.2%, 65.1%);
+
+    --accent: hsl(190, 70%, 60%);
+    --accent-foreground: hsl(222.2, 84%, 4.9%);
+
+    --destructive: hsl(0, 62.8%, 50.6%);
+    --destructive-foreground: hsl(210, 40%, 98%);
+
+    --border: hsl(217.2, 32.6%, 25%);
+    --input: hsl(217.2, 32.6%, 17.5%);
+    --ring: hsl(210, 70%, 65%);
+
+    --radius: 0.5rem;
+
+    --font-space-grotesk: "Space Grotesk", sans-serif;
+    --font-orbitron: "Orbitron", sans-serif;
+    --font-eb-garamond: "EB Garamond", serif;
+    --font-inter: "Inter", sans-serif;
+    --font-syne: "Syne", sans-serif;
+
+    /* Barcelona Bloom specific custom variables (defaults for other themes) */
+    --bb-glow: transparent; /* Will be overridden by Barcelona Bloom */
+    --bb-shadow: transparent;
+    --bb-link-hover: hsl(210, 70%, 85%); /* Default link hover */
+
+    /* Micro-interaction variables */
+    --transition-speed-fast: 0.1s;
+    --transition-speed-medium: 0.2s;
+    --transition-speed-slow: 0.4s;
+    --easing-function-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Example bounce */
+    --easing-function-smooth: ease-in-out;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image: linear-gradient(180deg, hsl(var(--background-start)), hsl(var(--background)));
+    min-height: 100vh;
+    transition: background 0.3s var(--easing-function-smooth), color 0.3s var(--easing-function-smooth);
+  }
+
+  /* Font theme classes */
+  .font-default {
+    font-family: var(--font-inter), sans-serif;
+  }
+  .font-syne {
+    font-family: var(--font-syne), var(--font-inter), sans-serif;
+  }
+
+  .card {
+    box-shadow: inset 0 0 15px 0 hsla(var(--card-glow), 0.15), 0 4px 20px 0 var(--bb-shadow, transparent);
+    transition: box-shadow var(--transition-speed-medium) var(--easing-function-smooth);
+  }
+}
+
+@layer utilities {
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary via-amber-400 to-primary bg-clip-text text-transparent;
+  }
+
+  .sacred-text {
+    @apply font-orbitron;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .font-poetic {
+    @apply font-sans; /* Or your chosen poetic font like EB Garamond */
+  }
+
+  /* --- Barcelona Bloom Shimmer & Highlight Utilities --- */
+
+  @keyframes pulse-glow-effect {
+    0%,
+    100% {
+      box-shadow: 0 0 5px hsla(var(--bb-glow), 0.6), 0 0 10px hsla(var(--bb-glow), 0.4), 0 0 0 0px
+        hsla(var(--ring), 0.5);
+    }
+    50% {
+      box-shadow: 0 0 12px hsla(var(--bb-glow), 0.9), 0 0 25px hsla(var(--bb-glow), 0.7), 0 0 0 3px
+        hsla(var(--ring), 0.3);
+    }
+  }
+  .bb-interactive-pulse-glow:hover,
+  .bb-interactive-pulse-glow:focus-visible {
+    animation: pulse-glow-effect 2s infinite ease-in-out;
+    outline-color: hsla(var(--ring), 0.7);
+  }
+  .bb-static-glow {
+    box-shadow: 0 0 8px hsla(var(--bb-glow), 0.7);
+  }
+
+  .bb-interactive-border-accent {
+    position: relative;
+    border-width: 1px;
+    border-style: solid;
+    border-color: hsl(var(--border));
+    transition: border-color var(--transition-speed-medium) var(--easing-function-smooth), box-shadow
+      var(--transition-speed-medium) var(--easing-function-smooth);
+  }
+  .bb-interactive-border-accent:hover,
+  .bb-interactive-border-accent:focus-visible {
+    border-color: hsl(var(--accent));
+    box-shadow: 0 0 10px hsla(var(--accent), 0.5), 0 0 3px hsla(var(--accent), 0.7);
+  }
+
+  .bb-interactive-bg-shimmer {
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--transition-speed-medium) var(--easing-function-smooth);
+  }
+  .bb-interactive-bg-shimmer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(var(--bb-glow), 0.15), transparent);
+    transition: transform var(--transition-speed-slow) var(--easing-function-smooth);
+    z-index: 0;
+  }
+  .bb-interactive-bg-shimmer:hover::before,
+  .bb-interactive-bg-shimmer:focus-visible::before {
+    transform: translateX(200%);
+  }
+  .bb-interactive-bg-shimmer:hover {
+    transform: translateY(-2px);
+  }
+  .bb-interactive-bg-shimmer > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* New: Interactive Link Glow */
+  .bb-interactive-link-glow {
+    transition: text-shadow var(--transition-speed-fast) var(--easing-function-smooth), color
+      var(--transition-speed-fast) var(--easing-function-smooth);
+  }
+  .bb-interactive-link-glow:hover,
+  .bb-interactive-link-glow:focus-visible {
+    text-shadow: 0 0 10px hsla(var(--bb-glow), 0.95);
+    color: hsl(var(--accent)); /* Or use var(--bb-link-hover) if defined for links */
+  }
+
+  /* Fade-in animation for dynamic content */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+    opacity: 0; /* Start hidden before animation */
+  }
+  .animation-delay-300 {
+    animation-delay: 0.3s;
+  }
+  .animation-delay-600 {
+    animation-delay: 0.6s;
+  }
+
+  /* Responsive text sizing utilities */
+  .responsive-text-overlay {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Softer shadow for general text */
+  }
+
+  /* Mobile-specific overlays for better text readability */
+  @media (max-width: 768px) {
+    .mobile-text-backdrop {
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(20, 184, 166, 0.1));
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(20, 184, 166, 0.2);
+    }
+  }
+
+  /* Spore Network Navigation Enhancements */
+  .spore-node-glow {
+    box-shadow: 0 0 20px hsla(var(--primary), 0.3);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .spore-node-glow:hover {
+    box-shadow: 0 0 30px hsla(var(--primary), 0.5), 0 0 60px hsla(var(--accent), 0.2);
+  }
+
+  /* Enhanced mobile menu animations */
+  .mobile-menu-slide {
+    transform: translateY(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-menu-slide.open {
+    transform: translateY(0);
+  }
+
+  /* Ecosystem node hover effects */
+  .ecosystem-node {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ecosystem-node::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(var(--primary), 0.1), transparent);
+    transition: left 0.5s ease;
+    z-index: 0;
+  }
+
+  .ecosystem-node:hover::before {
+    left: 100%;
+  }
+
+  .ecosystem-node > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Network activity pulse animation */
+  @keyframes network-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+  }
+
+  .network-pulse {
+    animation: network-pulse 2s infinite ease-in-out;
+  }
+
+  .subtle-hero-glow {
+    text-shadow: 0 0 10px hsla(var(--primary), 0.5), /* Softer primary glow */ 0 0 20px hsla(var(--primary), 0.3), /* Even softer, larger primary glow */
+      0 0 30px hsla(var(--accent), 0.2), /* Subtle accent glow */ 0 2px 5px rgba(0, 0, 0, 0.5); /* A bit of drop shadow for depth */
+    transition: text-shadow 0.3s ease-in-out;
+  }
+
+  .subtle-hero-glow:hover {
+    text-shadow: 0 0 15px hsla(var(--primary), 0.7), 0 0 30px hsla(var(--primary), 0.4), 0 0 45px
+      hsla(var(--accent), 0.3), 0 2px 5px rgba(0, 0, 0, 0.5);
+  }
+
+  .responsive-text-overlay-hero {
+    /* A more refined text shadow specifically for the hero title */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); /* Darker, tighter shadow for crispness */
+  }
+}
